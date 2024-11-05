@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile and Orders</title>
+    <link rel="stylesheet" href="profile.css">
+    <style>
+        /* Styles for Modal and Overlay */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+            z-index: 10;
+            margin-top: 20px;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+        .qrcode {
+            margin: 20px auto;
+            width: 200px; /* Adjust this to control QR code size */
+            height: 200px;
+        }
+        
+
+        /* Additional styles for the new component */
+        .navbar .user-actions a {
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        /* Modal and Overlay styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .cart-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            width: 80%; /* Adjusted width */
+            max-width: 600px; /* Set a max width */
+            height: 80vh; /* Adjusted height for more vertical space */
+            border-radius: 8px;
+            overflow-y: auto; /* Enables scrolling if content overflows */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .cart-modal.active {
+            display: block;
+        }
+
+        .close-btn {
+            cursor: pointer;
+            float: right;
+            font-size: 20px;
+        }
+
+        .logo {
+            display: flex; /* Use flexbox for better alignment */
+            align-items: center; /* Center items vertically */
+            padding: 10px; /* Add some padding */
+        }
+
+        .logo img {
+            max-width: 100px; /* Set a maximum width */
+            height: auto; /* Maintain aspect ratio */
+            margin-left: 10px; /* Space between the title and logo */
+        }
+
+        /* Footer */
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+
+        /* Slideshow Styles */
+        .slideshow-container {
+            position: relative;
+            max-width: 100%;
+            margin: auto;
+        }
+
+        .mySlides {
+            display: none;
+        }
+
+        .text {
+            color: #f2f2f2;
+            font-size: 15px;
+            padding: 8px 12px;
+            position: absolute;
+            bottom: 8px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .prev,
+        .next {
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            width: auto;
+            padding: 16px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            transition: 0.6s ease;
+            border-radius: 0 3px 3px 0;
+            user-select: none;
+        }
+
+        .next {
+            right: 0;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .dot {
+            cursor: pointer;
+            height: 15px;
+            width: 15px;
+            margin: 0 2px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.6s ease;
+        }
+
+        .active {
+            background-color: #717171;
+        }
+        
+    </style>
+</head>
+<body>
+    <header>
+        <div class="top-navbar">
+            <div class="logo">
+                <a href="hi.html"><h1>KṛṣiVīra</h1></a>
+                <img src="logo.jpeg" alt="Logo" class="h-16 w-40">
+            </div>
+            <div class="location">
+                <label for="location">Your City:</label>
+                <select id="city-dropdown">
+                    <option value="" disabled selected>Select your city</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Bengaluru">Bengaluru</option>
+                    <option value="Chennai">Chennai</option>
+                    <option value="Kolkata">Kolkata</option>
+                    <option value="Pune">Pune</option>
+                    <option value="Hyderabad">Hyderabad</option>
+                    <option value="Ahmedabad">Ahmedabad</option>
+                </select>
+                <button id="open-map-btn">Choose from Map</button>
+                <input type="text" id="location" placeholder="Selected Location">
+            </div>
+
+            <!-- Map Modal with Autocomplete Search -->
+            <div id="map-modal" class="cart-modal">
+                <div class="modal-content">
+                    <span class="close-btn" id="close-map-btn">&times;</span>
+                    <input type="text" id="autocomplete" placeholder="Type a location" />
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="profile.html" id="profile-btn">Profile</a>
+                <a href="#" id="wishlist-btn">Wishlist (<span id="wishlist-count">0</span>)</a>
+                <a href="#" id="cart-btn">My Cart (<span id="cart-count">0</span>)</a>
+
+                <div id="orders-modal" class="cart-modal">
+                    <h2>Your Previous Orders</h2>
+                    <ul id="order-items"></ul>
+                    <button id="close-orders">Close</button>
+                </div>
+
+                <div id="modal-overlay" class="modal-overlay"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" id="profileSection">
+        <div class="main-content">
+            <div class="profile-header">
+                <h1 id="profileFullName">K (She/Her)</h1>
+                <button class="edit-profile-btn" onclick="toggleEditForm()">Edit Profile</button>
+            </div>
+
+            <div class="profile-details">
+                <h2>Contact</h2>
+                <p id="profileContact">
+                    No registered services, you can add some on the <a href="#">settings</a> page.
+                </p>
+
+                <h2>Biography</h2>
+                <p id="profileBiography">No biography provided.</p>
+
+                <h2>Links</h2>
+                <p id="profileLinks">K hasn't added any links.</p>
+            </div>
+
+            <!-- Edit Profile Form -->
+            <div class="edit-profile-form" id="editProfileForm" style="display: none;">
+                <h2>Edit Profile</h2>
+                <form onsubmit="saveProfile(event)">
+                    <label for="profileName">Name:</label>
+                    <input type="text" id="profileName" name="profileName" value="K"><br>
+
+                    <label for="pronouns">Pronouns:</label>
+                    <input type="text" id="pronouns" name="pronouns" value="She/Her"><br>
+
+                    <label for="contact">Contact:</label>
+                    <input type="text" id="contact" name="contact"><br>
+
+                    <label for="biography">Biography:</label>
+                    <textarea id="biography" name="biography"></textarea><br>
+
+                    <label for="links">Links:</label>
+                    <input type="text" id="links" name="links"><br>
+
+                    <button type="submit">Save</button>
+                    <button type="button" onclick="toggleEditForm()">Cancel</button>
+                </form>
+            </div>
+
+            <div id="orders-modal" class="modal">
+                <h2>Your Previous Orders</h2>
+                <ul id="order-items"></ul>
+                <button id="close-orders">Close</button>
+            </div>
+
+            <div id="modal-overlay" class="overlay"></div>
+        </div>
+    </div>
+
+    <script src="profile.js">
+        document.addEventListener("DOMContentLoaded", function () {
+            const ordersBtn = document.getElementById("orders-btn");
+            const ordersModal = document.getElementById("orders-modal");
+            const closeOrders = document.getElementById("close-orders");
+            const modalOverlay = document.getElementById("modal-overlay");
+            const orderItems = document.getElementById("order-items");
+
+            // Sample Previous Orders Data
+            const previousOrders = [
+                { name: "Product 1", price: 450.00, quantity: 2, date: "2024-10-01" },
+                { name: "Product 2", price: 300.00, quantity: 1, date: "2024-10-05" },
+                { name: "Product 3", price: 2500.00, quantity: 1, date: "2024-10-10" }
+            ];
+
+            // Function to toggle modal visibility
+            function toggleModal(modal, show) {
+                modal.classList.toggle("active", show);
+                modalOverlay.classList.toggle("active", show);
+            }
+
+            // Event listener to open Previous Orders Modal
+            ordersBtn.addEventListener("click", function () {
+                updateOrderItems();
+                toggleModal(ordersModal, true);
+            });
+
+            // Event listener to close Previous Orders Modal
+            closeOrders.addEventListener("click", () => toggleModal(ordersModal, false));
+            modalOverlay.addEventListener("click", () => toggleModal(ordersModal, false));
+
+            // Function to update order items inside the modal
+            function updateOrderItems() {
+                orderItems.innerHTML = "";  // Clear previous items
+
+                previousOrders.forEach(order => {
+                    const listItem = document.createElement("li");
+                    listItem.textContent = `${order.name} - ₹${order.price.toFixed(2)} x ${order.quantity} (Ordered on: ${order.date})`;
+                    orderItems.appendChild(listItem);
+                });
+            }
+            
+        });
+    </script>
+</body>
+</html>
